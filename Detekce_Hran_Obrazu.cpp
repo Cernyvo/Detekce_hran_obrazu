@@ -6,16 +6,46 @@
 using namespace std;
 using namespace cv; 
 
+//deklarace promennych pro metodu Canny Edge Detection
+int minVal = 0;
+int max_minVal = 100;
+int pomer = 3; //pomer max_threshold:min_threshold (3:1)
+int kernel_velikost = 3;
+
+Mat img, img_gray, img_blur, edges, sobelx, sobely, sobelxy;
+
+
+void CannyThreshold(int, void*) 
+{
+
+    GaussianBlur(img_gray,
+        img_blur,
+        Size(3, 3),
+        0); //míra rozmazání obrazu
+
+    Canny(img_blur,
+        edges,
+        minVal, //spodní prahová hranice
+        minVal*pomer,//horní prahová hranice
+        kernel_velikost,
+        false);           
+
+    imshow("Edge Detection", edges);
+}
+
 int main()
 {    //načtení obrázku z adresáře skriptu
-    Mat img = imread("test7.jpg");
+    img = imread("test6.jpg");
+    if (img.empty())
+    {
+        cout << "Soubor nebyl nalezen!" << endl;
+        return -1;
+    }
 
     //převedení na černobílé spektrum
-    Mat img_gray;
     cvtColor(img, img_gray, COLOR_BGR2GRAY);
     
     //implementace Gaussovského vyhlazování
-    Mat img_blur;
     GaussianBlur(img_gray, img_blur, Size(3, 3), 0);
 
     //porovnání obrázku před a po aplikaci Gussovského vyhlazování
@@ -24,10 +54,9 @@ int main()
     waitKey(0);
 
     //detekce hran pomocí Sobelovy metody
-    Mat sobelx, sobely, sobelxy;
     Sobel(img_blur, sobelx, CV_64F, 1, 0, 5);
     Sobel(img_blur, sobely, CV_64F, 0, 1, 5);
-    Sobel(img_blur, sobelxy, CV_64F, 1, 1, 5);
+    Sobel(img_blur, sobelxy, CV_8U, 1, 1, 5);
 
     //zobrazení obrázku pomocí Sobelovy metody
     imshow("Sobel ve směru X", sobelx);
@@ -35,17 +64,20 @@ int main()
     imshow("Sobel kombinace XY", sobelxy);
     waitKey(0);
 
-    //aplikace canny edge detection algoritmu
-    Mat edges;
-    Canny(img_blur, edges, 100, 200, 3, false);
-
-
     // zobrazení původního obrázku
-    imshow("Původní obrázek", img);    
+    imshow("Původní obrázek", img);
+
+    //aplikace canny edge detection algoritmu
+    namedWindow("Edge Detection", WINDOW_AUTOSIZE);
+    // Canny Edge Detector
+    createTrackbar("Min_Val:", "Edge Detection", &minVal, max_minVal, CannyThreshold);
+    CannyThreshold(0, 0);
+
+   
     //uložení obrázku s detekovanými hranami do adresáře skriptu
-    imwrite("test7_detekce_hran.jpg", edges);
+    //imwrite("test7_detekce_hran.jpg", edges);
     //zobrazení canny edge detected obrázku
-    imshow("Detekce hran v obrazu pomocí Canny edge detection", edges);
+    //imshow("Detekce hran v obrazu pomocí Canny edge detection", edges);
     waitKey(0);
     destroyAllWindows();
     return 0;
